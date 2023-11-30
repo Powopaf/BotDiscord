@@ -1,6 +1,6 @@
 BotDiscordCode/.idea/
-bin\
-obj\
+bin/
+obj/
 BotDiscordCode/.idea/.idea.BotDiscordCode/.idea/projectSettingsUpdater.xml
 BotDiscordCode/.idea/.idea.BotDiscordCode/.idea/workspace.xml
 BotDiscordCode/BotDiscordCode.csproj

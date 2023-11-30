@@ -9,4 +9,5 @@ public class CommandTest : ModuleBase<SocketCommandContext>
     {
         await ReplyAsync("Pong");
     }
+    
 }

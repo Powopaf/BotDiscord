@@ -49,8 +49,8 @@ public class Program
         var message = (SocketUserMessage)socketMessage;
         
         int argPos = 0; //place of the arg of command (!)
-        
-        if (!message.HasCharPrefix('!', ref argPos)) return; //check if it's a command
+        const char prefix = '!'; // prefix of command
+        if (!message.HasCharPrefix(prefix, ref argPos)) return; //check if it's a command
 
         var context = new SocketCommandContext(_client, message);
         var result = await _commands.ExecuteAsync(context, argPos, null);

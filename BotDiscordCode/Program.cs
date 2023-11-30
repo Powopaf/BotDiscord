@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.InteropServices;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -10,14 +9,19 @@ public class Program
 {
     
     
-    private DiscordSocketClient _client;
-    private CommandService _commands;
-    
+    private DiscordSocketClient _client = null!;
+    private CommandService _commands = null!;
+
     public static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
-    
-    public async Task RunBotAsync()
+
+    private async Task RunBotAsync()
     {
-        _client = new DiscordSocketClient(new DiscordSocketConfig { LogLevel = LogSeverity.Debug });
+        
+        _client = new DiscordSocketClient(new DiscordSocketConfig
+        {
+            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent,
+            LogLevel = LogSeverity.Debug 
+        });
         _commands = new CommandService();
         _client.Log += Log;
         _client.Ready += () =>
@@ -34,7 +38,7 @@ public class Program
         await Task.Delay(-1);
     }
 
-    public async Task InstallCommandAsync()
+    private async Task InstallCommandAsync()
     {
         _client.MessageReceived += ReadMessageAsync;
         await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), null);

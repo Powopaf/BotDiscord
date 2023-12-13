@@ -1,22 +1,15 @@
 ﻿using System.Reflection;
 using Discord;
 using Discord.Commands;
-using Discord.Interactions;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace BotDiscordCode;
-
 public class Program
 {
     
     
     private DiscordSocketClient _client = null!;
-    private IServiceProvider _serviceProvider = null!;
-    private InteractionService _interactionService;
-
+    private CommandService _commands = null!;
     public static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
-
     private async Task RunBotAsync()
     {
         
@@ -25,36 +18,44 @@ public class Program
             GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent,
             LogLevel = LogSeverity.Debug 
         });
-        _serviceProvider = CreateServices();
-        const ulong id = 1049727057875177472; // id of Powopaf's serveur
+        _commands = new CommandService();
         _client.Log += Log;
         _client.Ready += () =>
         {
             Console.WriteLine("Guard is Ready");
             return Task.CompletedTask;
         };
-        _interactionService = new InteractionService(_client);
-        _serviceProvider = CreateServices();
-        // token only work on windows if the token is in the environmental variable 
+        
+        await InstallCommandAsync();
+        
         await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("DiscordBotGuardToken", EnvironmentVariableTarget.User));
         
-        var interactionService = new InteractionService(_client);
-        await interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _serviceProvider);
-        await interactionService.RegisterCommandsToGuildAsync(id);
-        _client.InteractionCreated += async interaction =>
-        {
-            var scope = _serviceProvider.CreateScope();
-            var ctx = new SocketInteractionContext(_client, interaction);
-            await _interactionService.ExecuteCommandAsync(ctx, scope.ServiceProvider);
-        };
         await _client.StartAsync();
         await Task.Delay(-1);
     }
-    
-    static IServiceProvider CreateServices()
+    private async Task InstallCommandAsync()
     {
-        var collection = new ServiceCollection();
-        return collection.BuildServiceProvider();
+        _client.MessageReceived += ReadMessageAsync;
+        await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), null);
+    }
+    private async Task ReadMessageAsync(SocketMessage socketMessage)
+    {
+        var message = (SocketUserMessage)socketMessage;
+
+        int argPos = 0; //place of the arg of command (!)
+
+        if (!message.HasCharPrefix('!', ref argPos)) return; //check if it's a command
+        const char prefix = '!'; // prefix of command
+        if (!message.HasCharPrefix(prefix, ref argPos)) return; //check if it's a command
+
+        var context = new SocketCommandContext(_client, message);
+        var result = await _commands.ExecuteAsync(context, argPos, null);
+        
+        //error
+        if (!result.IsSuccess)
+        {
+            await context.Channel.SendMessageAsync(result.ErrorReason);
+        }
     }
     private Task Log(LogMessage arg)
     {
